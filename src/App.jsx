@@ -88,7 +88,11 @@ const EVENT_POOL = [
     text: '당신의 산업에서 생성형 AI 도입이 빨라지며 반복업무가 크게 줄어듭니다.',
     apply: (s) => ({
       ...s,
-      jobSecurity: clamp(s.jobSecurity - Math.round((s.aiRisk - s.adaptability * 0.45) / 7), 0, 100),
+      jobSecurity: clamp(
+        s.jobSecurity - Math.round((s.aiRisk - s.adaptability * 0.45) / 7),
+        0,
+        100
+      ),
       stress: clamp(s.stress + 5, 0, 100),
     }),
   },
@@ -151,23 +155,67 @@ function scoreCareer(state) {
   const adaptFactor = state.adaptability * 0.2
   const resilienceFactor = state.resilience * 0.15
   const penalty = state.stress * 0.18 + (100 - state.money) * 0.05
-  return clamp(Math.round(healthFactor + jobFactor + adaptFactor + resilienceFactor - penalty + 10), 0, 100)
+  return clamp(
+    Math.round(
+      healthFactor + jobFactor + adaptFactor + resilienceFactor - penalty + 10
+    ),
+    0,
+    100
+  )
 }
 
 function estimateWorkableAge(state) {
   const now = state.age
-  const bonus = Math.round((state.health + state.jobSecurity + state.adaptability + state.resilience - state.stress) / 18)
+  const bonus = Math.round(
+    (state.health +
+      state.jobSecurity +
+      state.adaptability +
+      state.resilience -
+      state.stress) /
+      18
+  )
   return clamp(now + bonus, now, 75)
 }
 
 function buildInitialState(form) {
   const job = JOBS[form.job]
-  const health = clamp(form.health * 20 + (form.exercise - 3) * 4 - Math.max(0, form.workHours - 45) * 0.5, 25, 95)
-  const adaptability = clamp(form.aiSkill * 18 + (form.learningWill - 3) * 5, 20, 95)
-  const stress = clamp(job.stressBase + Math.max(0, form.workHours - 45) * 0.8 - (form.health - 3) * 3, 20, 95)
-  const jobSecurity = clamp(100 - job.aiRisk + job.growth * 0.35 + form.aiSkill * 3, 25, 95)
-  const resilience = clamp(52 + (form.exercise - 3) * 6 + (form.learningWill - 3) * 5 - Math.max(0, form.workHours - 50) * 0.4, 20, 95)
-  const money = clamp(55 + (form.workHours - 40) * 0.9 + (job.growth - 50) * 0.2, 30, 90)
+  const health = clamp(
+    form.health * 20 +
+      (form.exercise - 3) * 4 -
+      Math.max(0, form.workHours - 45) * 0.5,
+    25,
+    95
+  )
+  const adaptability = clamp(
+    form.aiSkill * 18 + (form.learningWill - 3) * 5,
+    20,
+    95
+  )
+  const stress = clamp(
+    job.stressBase +
+      Math.max(0, form.workHours - 45) * 0.8 -
+      (form.health - 3) * 3,
+    20,
+    95
+  )
+  const jobSecurity = clamp(
+    100 - job.aiRisk + job.growth * 0.35 + form.aiSkill * 3,
+    25,
+    95
+  )
+  const resilience = clamp(
+    52 +
+      (form.exercise - 3) * 6 +
+      (form.learningWill - 3) * 5 -
+      Math.max(0, form.workHours - 50) * 0.4,
+    20,
+    95
+  )
+  const money = clamp(
+    55 + (form.workHours - 40) * 0.9 + (job.growth - 50) * 0.2,
+    30,
+    90
+  )
 
   return {
     age: form.age,
@@ -229,16 +277,25 @@ function simulateOneStep(current, actionKey, scenario, year) {
 
   next = applyScenarioDrift(next, scenario)
 
-  const event = getYearlyEvent(year, scenario === 'optimistic' ? 1 : scenario === 'pessimistic' ? 3 : 2)
+  const event = getYearlyEvent(
+    year,
+    scenario === 'optimistic' ? 1 : scenario === 'pessimistic' ? 3 : 2
+  )
   next = event.apply(next)
 
   next.jobSecurity = clamp(
-    next.jobSecurity + Math.round(next.adaptability / 25) - Math.round(next.stress / 30),
+    next.jobSecurity +
+      Math.round(next.adaptability / 25) -
+      Math.round(next.stress / 30),
     0,
     100
   )
 
-  next.health = clamp(next.health - Math.max(0, Math.round((next.workHours - 48) / 4)), 0, 100)
+  next.health = clamp(
+    next.health - Math.max(0, Math.round((next.workHours - 48) / 4)),
+    0,
+    100
+  )
 
   const score = scoreCareer(next)
   const workableAge = estimateWorkableAge(next)
@@ -383,24 +440,37 @@ function App() {
   }
 
   const renderLineBars = () => {
-    if (log.length <= 1) return <p className="muted">아직 연도별 데이터가 없습니다.</p>
+    if (log.length <= 1) {
+      return <p className="text-sub">아직 연도별 데이터가 없습니다.</p>
+    }
 
     const playableLog = log.slice(1)
 
     return (
-      <div className="chart-list">
+      <div className="section-spacing">
         {playableLog.map((item) => (
-          <div key={item.turn} className="chart-row">
-            <div className="chart-row-head">
+          <div
+            key={item.turn}
+            className="glass-card"
+            style={{ padding: '16px', borderRadius: '16px' }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '10px',
+                gap: '12px',
+                flexWrap: 'wrap',
+              }}
+            >
               <span>{item.turn}년차</span>
               <span>{item.score}점</span>
             </div>
-            <div className="chart-bar-track">
-              <div className="chart-bar-fill" style={{ width: `${item.score}%` }} />
+            <div className="progress-track" style={{ height: '10px' }}>
+              <div className="progress-fill" style={{ width: `${item.score}%` }} />
             </div>
-            <div className="chart-meta">
-              <span>선택: {item.action}</span>
-              <span>이벤트: {item.event}</span>
+            <div className="text-sub" style={{ marginTop: '10px' }}>
+              선택: {item.action} / 이벤트: {item.event}
             </div>
           </div>
         ))}
@@ -409,92 +479,72 @@ function App() {
   }
 
   return (
-    <div className="page">
-      <div className="shell">
-        <header className="hero">
-          <div>
-            <div className="eyebrow">Career Sustainability Simulator</div>
-            <h1>건강수명 + AI 직업 리스크 미래 커리어 시뮬레이션</h1>
-            <p>
-              개인의 건강 상태, 직무 특성, AI 변화 대응력을 결합해 향후 커리어 지속가능성을
-              플레이 형태로 체험하는 시뮬레이션 게임입니다.
-            </p>
-          </div>
-          {phase !== 'intro' && state && (
-            <button className="secondary-btn" onClick={restart}>
-              처음부터 다시
-            </button>
-          )}
-        </header>
+    <div className="app-shell">
+      <div className="container section-spacing">
+        <div className="centered section-spacing">
+          <span className="badge">Simulation Mode</span>
+          <h1 className="game-title">AI Career Survival Simulator</h1>
+          <p className="subtitle">
+            미래 직업 세계에서 살아남기 위한 선택을 시작하세요
+          </p>
+        </div>
 
         {phase === 'intro' && (
           <div className="grid two">
-            <section className="card">
+            <section className="game-card" style={{ padding: '28px' }}>
               <h2>플레이어 설정</h2>
-              <p className="muted">
-                입력값을 바탕으로 초기 건강, 직업 안정성, AI 적응력이 계산됩니다.
+              <p className="text-sub">
+                입력값을 기반으로 초기 건강, 직업 안정성, AI 적응력이 계산됩니다.
               </p>
 
-              <div className="form-grid">
-                <label>
-                  이름
-                  <input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="예: 민준"
-                  />
-                </label>
+              <div className="section-spacing" style={{ marginTop: '20px' }}>
+                <input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="이름"
+                />
 
-                <label>
-                  나이
-                  <input
-                    type="number"
-                    min="20"
-                    max="60"
-                    value={form.age}
-                    onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
-                  />
-                </label>
+                <input
+                  type="number"
+                  min="20"
+                  max="60"
+                  value={form.age}
+                  onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
+                  placeholder="나이"
+                />
 
-                <label>
-                  직업군
-                  <select
-                    value={form.job}
-                    onChange={(e) => setForm({ ...form, job: e.target.value })}
-                  >
-                    {Object.entries(JOBS).map(([key, job]) => (
-                      <option key={key} value={key}>
-                        {job.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <select
+                  value={form.job}
+                  onChange={(e) => setForm({ ...form, job: e.target.value })}
+                >
+                  {Object.entries(JOBS).map(([key, job]) => (
+                    <option key={key} value={key}>
+                      {job.label}
+                    </option>
+                  ))}
+                </select>
 
-                <label>
-                  미래 시나리오
-                  <select
-                    value={scenario}
-                    onChange={(e) => setScenario(e.target.value)}
-                  >
-                    <option value="optimistic">낙관</option>
-                    <option value="baseline">기준</option>
-                    <option value="pessimistic">비관</option>
-                  </select>
-                </label>
+                <select value={scenario} onChange={(e) => setScenario(e.target.value)}>
+                  <option value="optimistic">낙관 시나리오</option>
+                  <option value="baseline">기준 시나리오</option>
+                  <option value="pessimistic">비관 시나리오</option>
+                </select>
 
-                <label>
+                <label className="text-sub">
                   주당 노동시간
                   <input
                     type="range"
                     min="30"
                     max="70"
                     value={form.workHours}
-                    onChange={(e) => setForm({ ...form, workHours: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setForm({ ...form, workHours: Number(e.target.value) })
+                    }
                   />
-                  <span className="range-value">{form.workHours}시간</span>
+                  <div>{form.workHours}시간</div>
                 </label>
 
-                <label>
+                <label className="text-sub">
                   주관적 건강 상태
                   <input
                     type="range"
@@ -503,22 +553,24 @@ function App() {
                     value={form.health}
                     onChange={(e) => setForm({ ...form, health: Number(e.target.value) })}
                   />
-                  <span className="range-value">{form.health}/5</span>
+                  <div>{form.health}/5</div>
                 </label>
 
-                <label>
+                <label className="text-sub">
                   운동/회복 습관
                   <input
                     type="range"
                     min="1"
                     max="5"
                     value={form.exercise}
-                    onChange={(e) => setForm({ ...form, exercise: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setForm({ ...form, exercise: Number(e.target.value) })
+                    }
                   />
-                  <span className="range-value">{form.exercise}/5</span>
+                  <div>{form.exercise}/5</div>
                 </label>
 
-                <label>
+                <label className="text-sub">
                   AI 도구 활용 수준
                   <input
                     type="range"
@@ -527,10 +579,10 @@ function App() {
                     value={form.aiSkill}
                     onChange={(e) => setForm({ ...form, aiSkill: Number(e.target.value) })}
                   />
-                  <span className="range-value">{form.aiSkill}/5</span>
+                  <div>{form.aiSkill}/5</div>
                 </label>
 
-                <label>
+                <label className="text-sub">
                   재교육 의지
                   <input
                     type="range"
@@ -541,56 +593,71 @@ function App() {
                       setForm({ ...form, learningWill: Number(e.target.value) })
                     }
                   />
-                  <span className="range-value">{form.learningWill}/5</span>
+                  <div>{form.learningWill}/5</div>
                 </label>
-              </div>
 
-              <button className="primary-btn" onClick={startGame}>
-                시뮬레이션 시작
-              </button>
+                <button className="btn-primary" onClick={startGame}>
+                  🚀 시뮬레이션 시작
+                </button>
+              </div>
             </section>
 
-            <section className="card">
+            <section className="game-card" style={{ padding: '28px' }}>
               <h2>게임 목표</h2>
-              <div className="info-box">
-                <strong>승리 조건</strong>
-                <p>8개 연차 동안 건강과 직업 안정성을 유지하며 높은 점수를 확보합니다.</p>
-              </div>
-              <div className="info-box">
-                <strong>실패 조건</strong>
-                <p>건강 또는 직업 안정성이 급격히 악화되면 시뮬레이션이 조기 종료됩니다.</p>
-              </div>
-              <div className="info-box">
-                <strong>핵심 전략</strong>
-                <p>단기 성과만 올리면 후반부에 무너질 수 있습니다. 균형이 중요합니다.</p>
+
+              <div className="section-spacing" style={{ marginTop: '16px' }}>
+                <div>
+                  <span className="badge">승리 조건</span>
+                  <p className="text-sub" style={{ marginTop: '10px' }}>
+                    8개 연차 동안 건강과 직업 안정성을 유지하며 높은 점수를 확보합니다.
+                  </p>
+                </div>
+
+                <div>
+                  <span className="badge">실패 조건</span>
+                  <p className="text-sub" style={{ marginTop: '10px' }}>
+                    건강 또는 직업 안정성이 급격히 악화되면 시뮬레이션이 조기 종료됩니다.
+                  </p>
+                </div>
+
+                <div>
+                  <span className="badge">핵심 전략</span>
+                  <p className="text-sub" style={{ marginTop: '10px' }}>
+                    단기 성과만 올리면 후반부에 무너질 수 있습니다. 균형이 중요합니다.
+                  </p>
+                </div>
               </div>
             </section>
           </div>
         )}
 
         {phase !== 'intro' && state && (
-          <div className="grid main-layout">
-            <aside className="left-panel">
-              <section className="card">
+          <div className="grid two">
+            <section className="game-card" style={{ padding: '24px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginBottom: '16px',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <h2>현재 상태</h2>
-                <div className="stats-grid">
-                  <div className="stat-box">
-                    <span>이름</span>
-                    <strong>{state.name}</strong>
-                  </div>
-                  <div className="stat-box">
-                    <span>직업군</span>
-                    <strong>{state.jobLabel}</strong>
-                  </div>
-                  <div className="stat-box">
-                    <span>현재 나이</span>
-                    <strong>{state.age}세</strong>
-                  </div>
-                  <div className="stat-box">
-                    <span>지속가능성 점수</span>
-                    <strong>{currentScore}점</strong>
-                  </div>
+                <button className="btn-secondary" onClick={restart}>
+                  처음부터 다시
+                </button>
+              </div>
+
+              <div className="section-spacing">
+                <div className="badge">
+                  {state.name} · {state.jobLabel}
                 </div>
+
+                <div className="text-sub">현재 나이 {state.age}세</div>
+                <div className="text-sub">지속가능성 점수 {currentScore}점</div>
+                <div className="text-sub">예상 근로 가능 연령 {workableAge}세</div>
 
                 <ProgressBar label="건강" value={state.health} />
                 <ProgressBar label="직업 안정성" value={state.jobSecurity} />
@@ -599,149 +666,205 @@ function App() {
                 <ProgressBar label="경제적 자원" value={state.money} />
                 <ProgressBar label="스트레스" value={state.stress} danger />
 
-                <div className="info-box">
-                  <strong>예상 근로 가능 연령</strong>
-                  <p className="big-number">{workableAge}세</p>
-                </div>
-              </section>
-
-              <section className="card">
-                <h2>최근 이벤트</h2>
-                <div className="event-box">
-                  <strong>{lastEvent?.title}</strong>
-                  <p>{lastEvent?.text}</p>
-                </div>
-              </section>
-            </aside>
-
-            <main className="right-panel">
-              {phase === 'play' && (
-                <>
-                  <section className="card">
-                    <h2>{turn}년차 의사결정</h2>
-                    <p className="muted">
-                      현재 시나리오: {scenario === 'optimistic' ? '낙관' : scenario === 'baseline' ? '기준' : '비관'}
-                    </p>
-
-                    <div className="action-grid">
-                      {ACTIONS.map((action) => (
-                        <button
-                          key={action.key}
-                          className="action-card"
-                          onClick={() => playTurn(action.key)}
-                        >
-                          <h3>{action.title}</h3>
-                          <p>{action.desc}</p>
-                          <div className="tags">
-                            {Object.entries(action.effect).map(([k, v]) => (
-                              <span key={k} className="tag">
-                                {k} {v > 0 ? `+${v}` : v}
-                              </span>
-                            ))}
-                          </div>
-                        </button>
-                      ))}
+                {lastEvent && (
+                  <div
+                    className="glass-card"
+                    style={{ padding: '18px', borderRadius: '18px' }}
+                  >
+                    <div className="badge" style={{ marginBottom: '10px' }}>
+                      Recent Event
                     </div>
-                  </section>
+                    <h3 style={{ marginBottom: '8px' }}>{lastEvent.title}</h3>
+                    <p className="text-sub">{lastEvent.text}</p>
+                  </div>
+                )}
+              </div>
+            </section>
 
-                  <section className="card">
-                    <h2>플레이 로그</h2>
-                    <div className="log-list">
+            <section className="game-card" style={{ padding: '24px' }}>
+              {phase === 'play' && (
+                <div className="section-spacing">
+                  <div>
+                    <h2>{turn}년차 의사결정</h2>
+                    <p className="text-sub" style={{ marginTop: '10px' }}>
+                      현재 시나리오:{' '}
+                      {scenario === 'optimistic'
+                        ? '낙관'
+                        : scenario === 'baseline'
+                          ? '기준'
+                          : '비관'}
+                    </p>
+                  </div>
+
+                  <div className="section-spacing">
+                    {ACTIONS.map((action) => (
+                      <button
+                        key={action.key}
+                        className={`choice-card choice-${action.key}`}
+                        onClick={() => playTurn(action.key)}
+                      >
+                        <div style={{ fontSize: '1.05rem', fontWeight: 700 }}>
+                          {action.title}
+                        </div>
+                        <div className="text-sub" style={{ marginTop: '8px' }}>
+                          {action.desc}
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '8px',
+                            flexWrap: 'wrap',
+                            marginTop: '12px',
+                          }}
+                        >
+                          {Object.entries(action.effect).map(([k, v]) => (
+                            <span key={k} className="badge">
+                              {k} {v > 0 ? `+${v}` : v}
+                            </span>
+                          ))}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div>
+                    <h3 style={{ marginBottom: '12px' }}>플레이 로그</h3>
+                    <div className="section-spacing">
                       {log.slice(1).reverse().map((item) => (
-                        <div key={item.turn} className="log-item">
-                          <div className="log-head">
-                            <strong>{item.turn}년차 · {item.action}</strong>
-                            <span>{item.score}점</span>
+                        <div
+                          key={item.turn}
+                          className="glass-card"
+                          style={{ padding: '16px', borderRadius: '16px' }}
+                        >
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              gap: '12px',
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            <strong>
+                              {item.turn}년차 · {item.action}
+                            </strong>
+                            <span className="text-sub">{item.score}점</span>
                           </div>
-                          <p>이벤트: {item.event}</p>
+                          <div className="text-sub" style={{ marginTop: '8px' }}>
+                            이벤트: {item.event}
+                          </div>
                         </div>
                       ))}
-                      {log.length === 1 && <p className="muted">아직 로그가 없습니다.</p>}
+                      {log.length === 1 && (
+                        <p className="text-sub">아직 로그가 없습니다.</p>
+                      )}
                     </div>
-                  </section>
-                </>
+                  </div>
+                </div>
               )}
 
               {phase === 'result' && (
-                <>
-                  <section className="card">
+                <div className="section-spacing">
+                  <div>
                     <h2>최종 리포트</h2>
-                    <div className="result-grid">
-                      <div className="result-box rose">
-                        <span>최종 점수</span>
-                        <strong>{currentScore}점</strong>
-                      </div>
-                      <div className="result-box blue">
-                        <span>예상 근로 가능 연령</span>
-                        <strong>{workableAge}세</strong>
-                      </div>
-                      <div className="result-box green">
-                        <span>종합 판정</span>
-                        <strong>
-                          {currentScore >= 75 ? '안정적' : currentScore >= 55 ? '관리 필요' : '고위험'}
-                        </strong>
-                      </div>
-                    </div>
-                  </section>
+                    <p className="text-sub" style={{ marginTop: '10px' }}>
+                      당신의 커리어 시뮬레이션 결과입니다.
+                    </p>
+                  </div>
 
-                  <section className="card">
-                    <h2>연도별 변화</h2>
+                  <div className="section-spacing">
+                    <div
+                      className="glass-card"
+                      style={{ padding: '18px', borderRadius: '18px' }}
+                    >
+                      <div className="badge" style={{ marginBottom: '10px' }}>
+                        Final Score
+                      </div>
+                      <h3>{currentScore}점</h3>
+                    </div>
+
+                    <div
+                      className="glass-card"
+                      style={{ padding: '18px', borderRadius: '18px' }}
+                    >
+                      <div className="badge" style={{ marginBottom: '10px' }}>
+                        Workable Age
+                      </div>
+                      <h3>{workableAge}세</h3>
+                    </div>
+
+                    <div
+                      className="glass-card"
+                      style={{ padding: '18px', borderRadius: '18px' }}
+                    >
+                      <div className="badge" style={{ marginBottom: '10px' }}>
+                        종합 판정
+                      </div>
+                      <h3>
+                        {currentScore >= 75
+                          ? '안정적'
+                          : currentScore >= 55
+                            ? '관리 필요'
+                            : '고위험'}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 style={{ marginBottom: '12px' }}>연도별 변화</h3>
                     {renderLineBars()}
-                  </section>
+                  </div>
 
                   {scenarioPreview && (
-                    <section className="card">
-                      <h2>시나리오 비교</h2>
-                      <div className="result-grid">
-                        <div className="result-box green">
-                          <span>낙관 시나리오</span>
-                          <strong>{scenarioPreview.optimistic.finalScore}점</strong>
-                          <small>{scenarioPreview.optimistic.workableAge}세까지</small>
+                    <div className="section-spacing">
+                      <h3>시나리오 비교</h3>
+
+                      <div
+                        className="glass-card"
+                        style={{ padding: '18px', borderRadius: '18px' }}
+                      >
+                        <div className="badge" style={{ marginBottom: '10px' }}>
+                          낙관 시나리오
                         </div>
-                        <div className="result-box">
-                          <span>기준 시나리오</span>
-                          <strong>{scenarioPreview.baseline.finalScore}점</strong>
-                          <small>{scenarioPreview.baseline.workableAge}세까지</small>
-                        </div>
-                        <div className="result-box rose">
-                          <span>비관 시나리오</span>
-                          <strong>{scenarioPreview.pessimistic.finalScore}점</strong>
-                          <small>{scenarioPreview.pessimistic.workableAge}세까지</small>
+                        <div>{scenarioPreview.optimistic.finalScore}점</div>
+                        <div className="text-sub">
+                          {scenarioPreview.optimistic.workableAge}세까지
                         </div>
                       </div>
-                    </section>
+
+                      <div
+                        className="glass-card"
+                        style={{ padding: '18px', borderRadius: '18px' }}
+                      >
+                        <div className="badge" style={{ marginBottom: '10px' }}>
+                          기준 시나리오
+                        </div>
+                        <div>{scenarioPreview.baseline.finalScore}점</div>
+                        <div className="text-sub">
+                          {scenarioPreview.baseline.workableAge}세까지
+                        </div>
+                      </div>
+
+                      <div
+                        className="glass-card"
+                        style={{ padding: '18px', borderRadius: '18px' }}
+                      >
+                        <div className="badge" style={{ marginBottom: '10px' }}>
+                          비관 시나리오
+                        </div>
+                        <div>{scenarioPreview.pessimistic.finalScore}점</div>
+                        <div className="text-sub">
+                          {scenarioPreview.pessimistic.workableAge}세까지
+                        </div>
+                      </div>
+                    </div>
                   )}
 
-                  <section className="card">
-                    <h2>AI 코치 제안</h2>
-                    <div className="info-box">
-                      <strong>건강 루틴</strong>
-                      <p>
-                        {state.health < 55
-                          ? '건강 지표가 낮아 먼저 수면·운동·회복 루틴 확보가 필요합니다.'
-                          : '건강 기반은 양호하므로 유지 전략이 중요합니다.'}
-                      </p>
-                    </div>
-                    <div className="info-box">
-                      <strong>AI 역량 강화</strong>
-                      <p>
-                        {state.adaptability < 60
-                          ? '업무 자동화 도구를 직접 사용하는 실습형 학습이 우선입니다.'
-                          : '기본 역량은 확보되어 있어, 직무 재설계 수준의 고급 활용이 적합합니다.'}
-                      </p>
-                    </div>
-                    <div className="info-box">
-                      <strong>커리어 전략</strong>
-                      <p>
-                        {state.jobSecurity < 55
-                          ? '현재 직무 지속성 리스크가 높아 직무 전환 또는 역할 확장이 필요합니다.'
-                          : '현재 직무에서 경쟁력을 유지하되, 리스킬링을 병행하는 전략이 효과적입니다.'}
-                      </p>
-                    </div>
-                  </section>
-                </>
+                  <button className="btn-primary" onClick={restart}>
+                    다시 플레이
+                  </button>
+                </div>
               )}
-            </main>
+            </section>
           </div>
         )}
       </div>
