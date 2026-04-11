@@ -155,7 +155,6 @@ function scoreCareer(state) {
   const adaptFactor = state.adaptability * 0.2
   const resilienceFactor = state.resilience * 0.15
   const penalty = state.stress * 0.18 + (100 - state.money) * 0.05
-
   return clamp(
     Math.round(
       healthFactor + jobFactor + adaptFactor + resilienceFactor - penalty + 10
@@ -175,70 +174,11 @@ function estimateWorkableAge(state) {
       state.stress) /
       18
   )
-
   return clamp(now + bonus, now, 75)
-}
-
-function getCharacterImage(state, useBaseOnly = false) {
-  const genderPrefix = state.gender === 'female' ? 'female' : 'male'
-
-  if (useBaseOnly) {
-    return `/characters/${genderPrefix}-base.png`
-  }
-
-  const jobImageMap = {
-    office: 'office',
-    developer: 'it',
-    healthcare: 'medical',
-    manufacturing: 'manufacturing',
-    service: 'service',
-  }
-
-  const jobSuffix = jobImageMap[state.jobKey]
-
-  if (!jobSuffix) {
-    return `/characters/${genderPrefix}-base.png`
-  }
-
-  return `/characters/${genderPrefix}-${jobSuffix}.png`
-}
-
-function getCharacterVisual({ gender, jobKey, age, stress, adaptability }) {
-  const ageBand = age < 30 ? '주니어' : age < 45 ? '프로' : '베테랑'
-
-  const face =
-    stress >= 80 ? '😵' :
-    stress >= 65 ? '😣' :
-    adaptability >= 75 ? '😎' :
-    '🙂'
-
-  const genderBase = gender === 'female' ? '👩' : '👨'
-
-  const jobIconMap = {
-    office: '📋',
-    developer: '💻',
-    healthcare: '🩺',
-    manufacturing: '🏭',
-    service: '💼',
-  }
-
-  const auraLabel =
-    adaptability >= 75 ? 'AI 적응형' :
-    stress >= 70 ? '번아웃 주의' :
-    '균형 상태'
-
-  return {
-    avatar: genderBase,
-    face,
-    jobIcon: jobIconMap[jobKey] ?? '🎮',
-    ageBand,
-    auraLabel,
-  }
 }
 
 function buildInitialState(form) {
   const job = JOBS[form.job]
-
   const health = clamp(
     form.health * 20 +
       (form.exercise - 3) * 4 -
@@ -246,13 +186,11 @@ function buildInitialState(form) {
     25,
     95
   )
-
   const adaptability = clamp(
     form.aiSkill * 18 + (form.learningWill - 3) * 5,
     20,
     95
   )
-
   const stress = clamp(
     job.stressBase +
       Math.max(0, form.workHours - 45) * 0.8 -
@@ -260,13 +198,11 @@ function buildInitialState(form) {
     20,
     95
   )
-
   const jobSecurity = clamp(
     100 - job.aiRisk + job.growth * 0.35 + form.aiSkill * 3,
     25,
     95
   )
-
   const resilience = clamp(
     52 +
       (form.exercise - 3) * 6 +
@@ -275,7 +211,6 @@ function buildInitialState(form) {
     20,
     95
   )
-
   const money = clamp(
     55 + (form.workHours - 40) * 0.9 + (job.growth - 50) * 0.2,
     30,
@@ -285,7 +220,6 @@ function buildInitialState(form) {
   return {
     age: form.age,
     name: form.name || '플레이어',
-    gender: form.gender,
     jobKey: form.job,
     jobLabel: job.label,
     aiRisk: job.aiRisk,
@@ -413,58 +347,11 @@ function ProgressBar({ label, value, danger = false }) {
   )
 }
 
-function CharacterPanel({ state, currentScore, workableAge, useBaseOnly = false }) {
-  return (
-    <div className="character-stage">
-      <div
-        className={`character-portrait ${state.gender} ${state.jobKey} ${
-          state.stress >= 70 ? 'is-danger' : ''
-        }`}
-      >
-        <div className="character-portrait-top">
-          <span className="character-job-label">
-            {state.jobLabel}
-          </span>
-          <span className="character-aura">
-            {useBaseOnly ? '준비 상태' : '진행 상태'}
-          </span>
-        </div>
-
-        <div className="character-avatar-wrap">
-          <img
-            className="character-avatar-image"
-            src={getCharacterImage(state, useBaseOnly)}
-            alt="캐릭터"
-          />
-        </div>
-
-        <div className="character-nameplate">
-          <strong>{state.name}</strong>
-          <span>
-            {state.gender === 'female' ? '여성' : '남성'}
-          </span>
-        </div>
-      </div>
-
-      <div className="character-summary glass-card">
-        <div className="badge" style={{ marginBottom: '10px' }}>
-          Player Status
-        </div>
-        <div className="text-sub">{state.jobLabel}</div>
-        <div className="text-sub">현재 나이 {state.age}세</div>
-        <div className="text-sub">지속가능성 점수 {currentScore}점</div>
-        <div className="text-sub">예상 근로 가능 연령 {workableAge}세</div>
-      </div>
-    </div>
-  )
-}
-
 function App() {
   const [phase, setPhase] = useState('intro')
   const [form, setForm] = useState({
     name: '',
     age: 30,
-    gender: 'male',
     job: 'office',
     workHours: 45,
     health: 3,
@@ -480,16 +367,6 @@ function App() {
   const [lastEvent, setLastEvent] = useState(null)
 
   const maxTurns = 8
-
-  const introPreviewState = useMemo(() => buildInitialState(form), [form])
-  const introPreviewScore = useMemo(
-    () => scoreCareer(introPreviewState),
-    [introPreviewState]
-  )
-  const introPreviewWorkableAge = useMemo(
-    () => estimateWorkableAge(introPreviewState),
-    [introPreviewState]
-  )
 
   const currentScore = useMemo(() => (state ? scoreCareer(state) : 0), [state])
   const workableAge = useMemo(() => (state ? estimateWorkableAge(state) : 0), [state])
@@ -614,61 +491,6 @@ function App() {
 
         {phase === 'intro' && (
           <div className="grid two">
-            <section className="game-card" style={{ padding: '24px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '12px',
-                  marginBottom: '16px',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <h2>현재 상태</h2>
-                <span className="badge">캐릭터 미리보기</span>
-              </div>
-
-              <div className="section-spacing">
-                <CharacterPanel
-                  state={introPreviewState}
-                  currentScore={introPreviewScore}
-                  workableAge={introPreviewWorkableAge}
-                  useBaseOnly={true}
-                />
-
-                <ProgressBar label="건강" value={introPreviewState.health} />
-                <ProgressBar label="직업 안정성" value={introPreviewState.jobSecurity} />
-                <ProgressBar label="AI 적응력" value={introPreviewState.adaptability} />
-                <ProgressBar label="회복탄력성" value={introPreviewState.resilience} />
-                <ProgressBar label="경제적 자원" value={introPreviewState.money} />
-                <ProgressBar label="스트레스" value={introPreviewState.stress} danger />
-
-                <div
-                  className="glass-card"
-                  style={{ padding: '18px', borderRadius: '18px' }}
-                >
-                  <div className="badge" style={{ marginBottom: '10px' }}>
-                    현재 설정 요약
-                  </div>
-                  <p className="text-sub">
-                    초기 화면에서는 기본 캐릭터가 표시되고, 시뮬레이션 시작 후 같은 위치에서 직군 이미지로 전환됩니다.
-                  </p>
-                  <p className="text-sub" style={{ marginTop: '8px' }}>
-                    선택 직군: {JOBS[form.job].label}
-                  </p>
-                  <p className="text-sub" style={{ marginTop: '8px' }}>
-                    시나리오:{' '}
-                    {scenario === 'optimistic'
-                      ? '낙관'
-                      : scenario === 'baseline'
-                        ? '기준'
-                        : '비관'}
-                  </p>
-                </div>
-              </div>
-            </section>
-
             <section className="game-card" style={{ padding: '28px' }}>
               <h2>플레이어 설정</h2>
               <p className="text-sub">
@@ -690,17 +512,6 @@ function App() {
                   onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
                   placeholder="나이"
                 />
-
-                <label className="text-sub">
-                  성별 선택
-                  <select
-                    value={form.gender}
-                    onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                  >
-                    <option value="male">남성</option>
-                    <option value="female">여성</option>
-                  </select>
-                </label>
 
                 <select
                   value={form.job}
@@ -785,45 +596,36 @@ function App() {
                   <div>{form.learningWill}/5</div>
                 </label>
 
-                <div
-                  className="glass-card"
-                  style={{ padding: '18px', borderRadius: '18px' }}
-                >
-                  <div className="badge" style={{ marginBottom: '10px' }}>
-                    게임 목표
-                  </div>
-                  <p className="text-sub">
+                <button className="btn-primary" onClick={startGame}>
+                  🚀 시뮬레이션 시작
+                </button>
+              </div>
+            </section>
+
+            <section className="game-card" style={{ padding: '28px' }}>
+              <h2>게임 목표</h2>
+
+              <div className="section-spacing" style={{ marginTop: '16px' }}>
+                <div>
+                  <span className="badge">승리 조건</span>
+                  <p className="text-sub" style={{ marginTop: '10px' }}>
                     8개 연차 동안 건강과 직업 안정성을 유지하며 높은 점수를 확보합니다.
                   </p>
                 </div>
 
-                <div
-                  className="glass-card"
-                  style={{ padding: '18px', borderRadius: '18px' }}
-                >
-                  <div className="badge" style={{ marginBottom: '10px' }}>
-                    실패 조건
-                  </div>
-                  <p className="text-sub">
+                <div>
+                  <span className="badge">실패 조건</span>
+                  <p className="text-sub" style={{ marginTop: '10px' }}>
                     건강 또는 직업 안정성이 급격히 악화되면 시뮬레이션이 조기 종료됩니다.
                   </p>
                 </div>
 
-                <div
-                  className="glass-card"
-                  style={{ padding: '18px', borderRadius: '18px' }}
-                >
-                  <div className="badge" style={{ marginBottom: '10px' }}>
-                    핵심 전략
-                  </div>
-                  <p className="text-sub">
+                <div>
+                  <span className="badge">핵심 전략</span>
+                  <p className="text-sub" style={{ marginTop: '10px' }}>
                     단기 성과만 올리면 후반부에 무너질 수 있습니다. 균형이 중요합니다.
                   </p>
                 </div>
-
-                <button className="btn-primary" onClick={startGame}>
-                  🚀 시뮬레이션 시작
-                </button>
               </div>
             </section>
           </div>
@@ -849,11 +651,13 @@ function App() {
               </div>
 
               <div className="section-spacing">
-                <CharacterPanel
-                  state={state}
-                  currentScore={currentScore}
-                  workableAge={workableAge}
-                />
+                <div className="badge">
+                  {state.name} · {state.jobLabel}
+                </div>
+
+                <div className="text-sub">현재 나이 {state.age}세</div>
+                <div className="text-sub">지속가능성 점수 {currentScore}점</div>
+                <div className="text-sub">예상 근로 가능 연령 {workableAge}세</div>
 
                 <ProgressBar label="건강" value={state.health} />
                 <ProgressBar label="직업 안정성" value={state.jobSecurity} />
