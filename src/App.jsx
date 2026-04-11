@@ -8,6 +8,7 @@ const JOBS = {
     bodyLoad: 35,
     stressBase: 62,
     growth: 50,
+    expectedWorkableAge: 61,
     description:
       '문서, 보고, 조율 업무 비중이 높아 AI 자동화 영향이 빠르게 반영됩니다.',
   },
@@ -17,6 +18,7 @@ const JOBS = {
     bodyLoad: 28,
     stressBase: 66,
     growth: 72,
+    expectedWorkableAge: 64,
     description:
       'AI 보조를 잘 활용하면 생산성이 커지지만, 학습 압박도 함께 커집니다.',
   },
@@ -26,6 +28,7 @@ const JOBS = {
     bodyLoad: 66,
     stressBase: 58,
     growth: 69,
+    expectedWorkableAge: 67,
     description:
       '대면 상호작용과 현장 대응력이 중요해 AI 대체 리스크는 낮습니다.',
   },
@@ -35,6 +38,7 @@ const JOBS = {
     bodyLoad: 74,
     stressBase: 55,
     growth: 57,
+    expectedWorkableAge: 60,
     description:
       '자동화 리스크와 신체 부담이 동시에 존재하는 직군입니다.',
   },
@@ -44,9 +48,16 @@ const JOBS = {
     bodyLoad: 46,
     stressBase: 64,
     growth: 60,
+    expectedWorkableAge: 62,
     description:
       '감정노동과 실적 압박이 크며, 일부 업무는 AI로 빠르게 전환됩니다.',
   },
+}
+
+const SCENARIOS = {
+  optimistic: '낙관 시나리오',
+  baseline: '기준 시나리오',
+  pessimistic: '비관 시나리오',
 }
 
 const ACTIONS = [
@@ -179,7 +190,44 @@ function estimateWorkableAge(state) {
   return clamp(now + bonus, now, 75)
 }
 
+function getJudgement(score) {
+  if (score >= 80) {
+    return {
+      label: '매우 안정적',
+      message: '건강, 적응력, 직업 안정성이 균형 있게 유지되고 있습니다.',
+    }
+  }
+  if (score >= 65) {
+    return {
+      label: '안정적',
+      message: '지속 가능성이 양호하지만 특정 리스크 관리가 필요합니다.',
+    }
+  }
+  if (score >= 50) {
+    return {
+      label: '관리 필요',
+      message: '현재 구조를 유지하면 후반부에 피로 또는 불안정성이 커질 수 있습니다.',
+    }
+  }
+  return {
+    label: '고위험',
+    message: '건강 또는 직업 안정성이 빠르게 악화되고 있어 전략 수정이 필요합니다.',
+  }
+}
+
+function getAgeGapLabel(diff) {
+  if (diff >= 6) return '직군 평균 대비 매우 긍정적'
+  if (diff >= 2) return '직군 평균 대비 우세'
+  if (diff >= -1) return '직군 평균 수준'
+  if (diff >= -5) return '직군 평균 대비 낮음'
+  return '직군 평균 대비 크게 낮음'
+}
+
 function getCharacterImage(state, useBaseOnly = false) {
+  if (state.gender === 'none') {
+    return '/characters/neutral-base.png'
+  }
+
   const genderPrefix = state.gender === 'female' ? 'female' : 'male'
 
   if (useBaseOnly) {
@@ -201,39 +249,6 @@ function getCharacterImage(state, useBaseOnly = false) {
   }
 
   return `/characters/${genderPrefix}-${jobSuffix}.png`
-}
-
-function getCharacterVisual({ gender, jobKey, age, stress, adaptability }) {
-  const ageBand = age < 30 ? '주니어' : age < 45 ? '프로' : '베테랑'
-
-  const face =
-    stress >= 80 ? '😵' :
-    stress >= 65 ? '😣' :
-    adaptability >= 75 ? '😎' :
-    '🙂'
-
-  const genderBase = gender === 'female' ? '👩' : '👨'
-
-  const jobIconMap = {
-    office: '📋',
-    developer: '💻',
-    healthcare: '🩺',
-    manufacturing: '🏭',
-    service: '💼',
-  }
-
-  const auraLabel =
-    adaptability >= 75 ? 'AI 적응형' :
-    stress >= 70 ? '번아웃 주의' :
-    '균형 상태'
-
-  return {
-    avatar: genderBase,
-    face,
-    jobIcon: jobIconMap[jobKey] ?? '🎮',
-    ageBand,
-    auraLabel,
-  }
 }
 
 function buildInitialState(form) {
@@ -290,6 +305,7 @@ function buildInitialState(form) {
     jobLabel: job.label,
     aiRisk: job.aiRisk,
     bodyLoad: job.bodyLoad,
+    expectedWorkableAge: job.expectedWorkableAge,
     workHours: form.workHours,
     health,
     adaptability,
@@ -414,6 +430,13 @@ function ProgressBar({ label, value, danger = false }) {
 }
 
 function CharacterPanel({ state, currentScore, workableAge, useBaseOnly = false }) {
+  const genderLabel =
+    state.gender === 'female'
+      ? '여성'
+      : state.gender === 'male'
+        ? '남성'
+        : '미선택'
+
   return (
     <div className="character-stage">
       <div
@@ -422,12 +445,8 @@ function CharacterPanel({ state, currentScore, workableAge, useBaseOnly = false 
         }`}
       >
         <div className="character-portrait-top">
-          <span className="character-job-label">
-            {state.jobLabel}
-          </span>
-          <span className="character-aura">
-            {useBaseOnly ? '준비 상태' : '진행 상태'}
-          </span>
+          <span className="character-job-label">{state.jobLabel}</span>
+          <span className="character-aura">{useBaseOnly ? '준비 상태' : '진행 상태'}</span>
         </div>
 
         <div className="character-avatar-wrap">
@@ -440,9 +459,7 @@ function CharacterPanel({ state, currentScore, workableAge, useBaseOnly = false 
 
         <div className="character-nameplate">
           <strong>{state.name}</strong>
-          <span>
-            {state.gender === 'female' ? '여성' : '남성'}
-          </span>
+          <span>{genderLabel}</span>
         </div>
       </div>
 
@@ -464,7 +481,7 @@ function App() {
   const [form, setForm] = useState({
     name: '',
     age: 30,
-    gender: 'male',
+    gender: 'none',
     job: 'office',
     workHours: 45,
     health: 3,
@@ -511,7 +528,19 @@ function App() {
     }
   }, [state, form, decisions])
 
+  const jobExpectedAge = state
+    ? JOBS[state.jobKey]?.expectedWorkableAge ?? 62
+    : JOBS[form.job]?.expectedWorkableAge ?? 62
+
+  const ageGap = workableAge - jobExpectedAge
+  const judgement = getJudgement(currentScore)
+
   const startGame = () => {
+    if (form.gender === 'none') {
+      alert('성별을 선택해주세요.')
+      return
+    }
+
     const initial = buildInitialState(form)
     setState(initial)
     setTurn(1)
@@ -652,18 +681,24 @@ function App() {
                     현재 설정 요약
                   </div>
                   <p className="text-sub">
-                    초기 화면에서는 기본 캐릭터가 표시되고, 시뮬레이션 시작 후 같은 위치에서 직군 이미지로 전환됩니다.
+                    성별을 선택하기 전에는 중립형 캐릭터가 표시되고, 남성 또는 여성을 선택하면 해당 기본 캐릭터로 전환됩니다.
                   </p>
                   <p className="text-sub" style={{ marginTop: '8px' }}>
                     선택 직군: {JOBS[form.job].label}
                   </p>
                   <p className="text-sub" style={{ marginTop: '8px' }}>
-                    시나리오:{' '}
-                    {scenario === 'optimistic'
-                      ? '낙관'
-                      : scenario === 'baseline'
-                        ? '기준'
-                        : '비관'}
+                    선택 성별:{' '}
+                    {form.gender === 'none'
+                      ? '미선택'
+                      : form.gender === 'male'
+                        ? '남성'
+                        : '여성'}
+                  </p>
+                  <p className="text-sub" style={{ marginTop: '8px' }}>
+                    시나리오: {SCENARIOS[scenario]}
+                  </p>
+                  <p className="text-sub" style={{ marginTop: '8px' }}>
+                    직군 기대 근로 가능 연령: {JOBS[form.job].expectedWorkableAge}세
                   </p>
                 </div>
               </div>
@@ -691,33 +726,64 @@ function App() {
                   placeholder="나이"
                 />
 
-                <label className="text-sub">
-                  성별 선택
-                  <select
-                    value={form.gender}
-                    onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                  >
-                    <option value="male">남성</option>
-                    <option value="female">여성</option>
-                  </select>
-                </label>
+                <div className="text-sub" style={{ display: 'grid', gap: '10px' }}>
+                  <span>성별 선택</span>
+                  <div className="gender-select">
+                    <button
+                      type="button"
+                      className={`gender-option ${form.gender === 'none' ? 'active' : ''}`}
+                      onClick={() => setForm({ ...form, gender: 'none' })}
+                    >
+                      미선택
+                    </button>
+                    <button
+                      type="button"
+                      className={`gender-option ${form.gender === 'male' ? 'active' : ''}`}
+                      onClick={() => setForm({ ...form, gender: 'male' })}
+                    >
+                      남성
+                    </button>
+                    <button
+                      type="button"
+                      className={`gender-option ${form.gender === 'female' ? 'active' : ''}`}
+                      onClick={() => setForm({ ...form, gender: 'female' })}
+                    >
+                      여성
+                    </button>
+                  </div>
+                </div>
 
-                <select
-                  value={form.job}
-                  onChange={(e) => setForm({ ...form, job: e.target.value })}
-                >
-                  {Object.entries(JOBS).map(([key, job]) => (
-                    <option key={key} value={key}>
-                      {job.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="text-sub" style={{ display: 'grid', gap: '10px' }}>
+                  <span>직군 선택</span>
+                  <div className="option-select">
+                    {Object.entries(JOBS).map(([key, job]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={`option-button ${form.job === key ? 'active' : ''}`}
+                        onClick={() => setForm({ ...form, job: key })}
+                      >
+                        {job.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                <select value={scenario} onChange={(e) => setScenario(e.target.value)}>
-                  <option value="optimistic">낙관 시나리오</option>
-                  <option value="baseline">기준 시나리오</option>
-                  <option value="pessimistic">비관 시나리오</option>
-                </select>
+                <div className="text-sub" style={{ display: 'grid', gap: '10px' }}>
+                  <span>시나리오 선택</span>
+                  <div className="option-select">
+                    {Object.entries(SCENARIOS).map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={`option-button ${scenario === key ? 'active' : ''}`}
+                        onClick={() => setScenario(key)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 <label className="text-sub">
                   주당 노동시간
@@ -883,12 +949,7 @@ function App() {
                   <div>
                     <h2>{turn}년차 의사결정</h2>
                     <p className="text-sub" style={{ marginTop: '10px' }}>
-                      현재 시나리오:{' '}
-                      {scenario === 'optimistic'
-                        ? '낙관'
-                        : scenario === 'baseline'
-                          ? '기준'
-                          : '비관'}
+                      현재 시나리오: {SCENARIOS[scenario]}
                     </p>
                   </div>
 
@@ -967,7 +1028,93 @@ function App() {
                     </p>
                   </div>
 
-                  <div className="section-spacing">
+                  <div
+                    className="glass-card"
+                    style={{
+                      padding: '24px',
+                      borderRadius: '24px',
+                      background:
+                        'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06))',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: '16px',
+                        flexWrap: 'wrap',
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <div>
+                        <div className="badge" style={{ marginBottom: '12px' }}>
+                          핵심 결과
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '0.95rem',
+                            opacity: 0.8,
+                            marginBottom: '10px',
+                          }}
+                        >
+                          예상 근로 가능 연령
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 'clamp(3rem, 8vw, 5.4rem)',
+                            lineHeight: 1,
+                            fontWeight: 800,
+                            letterSpacing: '-0.04em',
+                            marginBottom: '10px',
+                          }}
+                        >
+                          {workableAge}
+                          <span style={{ fontSize: '0.38em', marginLeft: '8px' }}>세</span>
+                        </div>
+                        <div className="text-sub" style={{ fontSize: '0.98rem' }}>
+                          직군 기대 연령 {jobExpectedAge}세 · 차이 {ageGap >= 0 ? '+' : ''}
+                          {ageGap}세
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          minWidth: '220px',
+                          display: 'grid',
+                          gap: '10px',
+                        }}
+                      >
+                        <div
+                          className="glass-card"
+                          style={{ padding: '14px 16px', borderRadius: '16px' }}
+                        >
+                          <div className="badge" style={{ marginBottom: '8px' }}>
+                            해석
+                          </div>
+                          <div style={{ fontWeight: 700 }}>{getAgeGapLabel(ageGap)}</div>
+                        </div>
+
+                        <div
+                          className="glass-card"
+                          style={{ padding: '14px 16px', borderRadius: '16px' }}
+                        >
+                          <div className="badge" style={{ marginBottom: '8px' }}>
+                            종합 판정
+                          </div>
+                          <div style={{ fontWeight: 700 }}>{judgement.label}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                      gap: '14px',
+                    }}
+                  >
                     <div
                       className="glass-card"
                       style={{ padding: '18px', borderRadius: '18px' }}
@@ -975,33 +1122,34 @@ function App() {
                       <div className="badge" style={{ marginBottom: '10px' }}>
                         Final Score
                       </div>
-                      <h3>{currentScore}점</h3>
-                    </div>
-
-                    <div
-                      className="glass-card"
-                      style={{ padding: '18px', borderRadius: '18px' }}
-                    >
-                      <div className="badge" style={{ marginBottom: '10px' }}>
-                        Workable Age
-                      </div>
-                      <h3>{workableAge}세</h3>
-                    </div>
-
-                    <div
-                      className="glass-card"
-                      style={{ padding: '18px', borderRadius: '18px' }}
-                    >
-                      <div className="badge" style={{ marginBottom: '10px' }}>
-                        종합 판정
-                      </div>
-                      <h3>
-                        {currentScore >= 75
-                          ? '안정적'
-                          : currentScore >= 55
-                            ? '관리 필요'
-                            : '고위험'}
+                      <h3 style={{ fontSize: '2rem', marginBottom: '6px' }}>
+                        {currentScore}점
                       </h3>
+                      <p className="text-sub">{judgement.message}</p>
+                    </div>
+
+                    <div
+                      className="glass-card"
+                      style={{ padding: '18px', borderRadius: '18px' }}
+                    >
+                      <div className="badge" style={{ marginBottom: '10px' }}>
+                        현재 나이
+                      </div>
+                      <h3 style={{ fontSize: '2rem', marginBottom: '6px' }}>{state.age}세</h3>
+                      <p className="text-sub">시뮬레이션 종료 시점 기준</p>
+                    </div>
+
+                    <div
+                      className="glass-card"
+                      style={{ padding: '18px', borderRadius: '18px' }}
+                    >
+                      <div className="badge" style={{ marginBottom: '10px' }}>
+                        선택 직군 기준
+                      </div>
+                      <h3 style={{ fontSize: '2rem', marginBottom: '6px' }}>
+                        {state.jobLabel}
+                      </h3>
+                      <p className="text-sub">기대 근로 가능 연령 {jobExpectedAge}세</p>
                     </div>
                   </div>
 
@@ -1015,41 +1163,55 @@ function App() {
                       <h3>시나리오 비교</h3>
 
                       <div
-                        className="glass-card"
-                        style={{ padding: '18px', borderRadius: '18px' }}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                          gap: '14px',
+                        }}
                       >
-                        <div className="badge" style={{ marginBottom: '10px' }}>
-                          낙관 시나리오
+                        <div
+                          className="glass-card"
+                          style={{ padding: '18px', borderRadius: '18px' }}
+                        >
+                          <div className="badge" style={{ marginBottom: '10px' }}>
+                            낙관 시나리오
+                          </div>
+                          <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>
+                            {scenarioPreview.optimistic.workableAge}세
+                          </div>
+                          <div className="text-sub" style={{ marginTop: '6px' }}>
+                            {scenarioPreview.optimistic.finalScore}점
+                          </div>
                         </div>
-                        <div>{scenarioPreview.optimistic.finalScore}점</div>
-                        <div className="text-sub">
-                          {scenarioPreview.optimistic.workableAge}세까지
-                        </div>
-                      </div>
 
-                      <div
-                        className="glass-card"
-                        style={{ padding: '18px', borderRadius: '18px' }}
-                      >
-                        <div className="badge" style={{ marginBottom: '10px' }}>
-                          기준 시나리오
+                        <div
+                          className="glass-card"
+                          style={{ padding: '18px', borderRadius: '18px' }}
+                        >
+                          <div className="badge" style={{ marginBottom: '10px' }}>
+                            기준 시나리오
+                          </div>
+                          <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>
+                            {scenarioPreview.baseline.workableAge}세
+                          </div>
+                          <div className="text-sub" style={{ marginTop: '6px' }}>
+                            {scenarioPreview.baseline.finalScore}점
+                          </div>
                         </div>
-                        <div>{scenarioPreview.baseline.finalScore}점</div>
-                        <div className="text-sub">
-                          {scenarioPreview.baseline.workableAge}세까지
-                        </div>
-                      </div>
 
-                      <div
-                        className="glass-card"
-                        style={{ padding: '18px', borderRadius: '18px' }}
-                      >
-                        <div className="badge" style={{ marginBottom: '10px' }}>
-                          비관 시나리오
-                        </div>
-                        <div>{scenarioPreview.pessimistic.finalScore}점</div>
-                        <div className="text-sub">
-                          {scenarioPreview.pessimistic.workableAge}세까지
+                        <div
+                          className="glass-card"
+                          style={{ padding: '18px', borderRadius: '18px' }}
+                        >
+                          <div className="badge" style={{ marginBottom: '10px' }}>
+                            비관 시나리오
+                          </div>
+                          <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>
+                            {scenarioPreview.pessimistic.workableAge}세
+                          </div>
+                          <div className="text-sub" style={{ marginTop: '6px' }}>
+                            {scenarioPreview.pessimistic.finalScore}점
+                          </div>
                         </div>
                       </div>
                     </div>

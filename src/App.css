@@ -138,6 +138,99 @@ button {
 }
 
 /* =========================
+   성별 선택
+========================= */
+
+.gender-select {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gender-option {
+  flex: 1 1 0;
+  min-width: 110px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.72);
+  color: var(--text-main);
+  padding: 14px 12px;
+  border-radius: 14px;
+  text-align: center;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.gender-option:hover {
+  transform: translateY(-2px);
+  border-color: rgba(110, 231, 255, 0.35);
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.gender-option.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 12px 28px rgba(79, 70, 229, 0.24);
+}
+
+/* =========================
+   공통 옵션 선택
+========================= */
+
+.option-select {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+/* 2번째 줄 버튼 위치 조정 */
+.option-button:nth-child(4) {
+  grid-column: 1 / 2;
+  justify-self: end;
+}
+
+.option-button:nth-child(5) {
+  grid-column: 3 / 4;
+  justify-self: start;
+}
+
+.option-button {
+  flex: 1 1 0;
+  min-width: 140px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.72);
+  color: var(--text-main);
+  padding: 14px 12px;
+  border-radius: 14px;
+  text-align: center;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.option-button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(110, 231, 255, 0.35);
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.option-button.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 12px 28px rgba(79, 70, 229, 0.24);
+}
+
+/* =========================
    선택 카드
 ========================= */
 
@@ -225,6 +318,12 @@ button {
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
 }
 
+.character-portrait.none {
+  background:
+    radial-gradient(circle at top, rgba(148, 163, 184, 0.18), transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+}
+
 .character-portrait.male {
   background:
     radial-gradient(circle at top, rgba(104, 166, 255, 0.18), transparent 45%),
@@ -270,16 +369,12 @@ button {
   gap: 12px;
 }
 
-.character-job-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 54px;
-  height: 54px;
-  border-radius: 16px;
+.character-job-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.08);
-  font-size: 1.4rem;
-  flex-shrink: 0;
 }
 
 .character-aura {
@@ -346,11 +441,162 @@ button {
 }
 
 /* =========================
+   결과 화면 강화
+========================= */
+
+.result-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.18), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.16), transparent 38%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.result-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -80px -80px auto;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.06), transparent 65%);
+  pointer-events: none;
+}
+
+.result-hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.result-hero-label {
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.72);
+  margin-bottom: 10px;
+}
+
+.result-hero-age {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  line-height: 0.95;
+  margin-bottom: 12px;
+}
+
+.result-hero-age-value {
+  font-size: clamp(3.4rem, 8vw, 5.8rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+
+.result-hero-age-unit {
+  font-size: 1.45rem;
+  font-weight: 700;
+  opacity: 0.9;
+  margin-bottom: 10px;
+}
+
+.result-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.result-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.result-side-stack {
+  min-width: 220px;
+  display: grid;
+  gap: 10px;
+}
+
+.result-mini-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.result-mini-card-title {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.66);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.result-mini-card-value {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.result-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.result-summary-card {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.result-summary-card h3 {
+  font-size: 2rem;
+  margin: 6px 0 8px;
+  letter-spacing: -0.03em;
+}
+
+.result-scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.result-scenario-card {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.result-scenario-age {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* =========================
    카드 내부 정렬
 ========================= */
 
 .game-card h2 {
   margin-bottom: 8px;
+}
+
+.game-card h3 {
+  margin: 0;
 }
 
 .game-card .character-stage {
@@ -406,6 +652,17 @@ button {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .result-hero-top {
+    flex-direction: column;
+  }
+
+  .result-side-stack {
+    width: 100%;
+    min-width: 100%;
+    grid-template-columns: 1fr 1fr;
+    display: grid;
+  }
 }
 
 @media (max-width: 640px) {
@@ -413,15 +670,19 @@ button {
     gap: 18px;
   }
 
+  .gender-select,
+  .option-select {
+    flex-direction: column;
+  }
+
+  .gender-option,
+  .option-button {
+    min-width: 100%;
+  }
+
   .character-portrait {
     min-height: 340px;
     padding: 16px;
-  }
-
-  .character-job-icon {
-    width: 46px;
-    height: 46px;
-    font-size: 1.2rem;
   }
 
   .character-aura {
@@ -443,12 +704,32 @@ button {
     margin-top: 12px;
     padding: 14px 14px;
   }
-}
 
-.character-job-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.08);
+  .character-portrait-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .result-hero {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .result-hero-age-value {
+    font-size: clamp(2.8rem, 15vw, 4.2rem);
+  }
+
+  .result-hero-age-unit {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+
+  .result-side-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .result-summary-grid,
+  .result-scenario-grid {
+    grid-template-columns: 1fr;
+  }
 }
