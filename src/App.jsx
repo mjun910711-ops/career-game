@@ -930,13 +930,16 @@ function App() {
     if (!form.name.trim()) {
       setNameError(true)
 
-      requestAnimationFrame(() => {
+      setTimeout(() => {
         nameInputRef.current?.scrollIntoView({
           behavior: 'smooth',
           block: 'center',
         })
-        nameInputRef.current?.focus()
-      })
+
+        setTimeout(() => {
+          nameInputRef.current?.focus()
+        }, 250)
+      }, 50)
 
       return
     }
@@ -944,12 +947,12 @@ function App() {
     if (form.gender === 'none') {
       setGenderError(true)
 
-      requestAnimationFrame(() => {
+      setTimeout(() => {
         genderSectionRef.current?.scrollIntoView({
           behavior: 'smooth',
           block: 'center',
         })
-      })
+      }, 50)
 
       return
     }
@@ -1000,6 +1003,8 @@ function App() {
       },
     ])
 
+    setActionFeedback(formatActionFeedback(result.action.effect))
+
     setTurnFeedback({
       turn,
       action: result.action.title,
@@ -1031,13 +1036,19 @@ function App() {
     setScenario('baseline')
     setShowGuide(false)
     setTurnFeedback(null)
+    setActionFeedback(null)
 
     // 👇 추가 (입력값 초기화)
     setForm({
       name: '',
       age: 30,
-      gender: '',
-      job: '',
+      gender: 'none',
+      job: 'office',
+      workHours: 45,
+      health: 3,
+      exercise: 3,
+      aiSkill: 3,
+      learningWill: 3,
     })
 
     // 👇 추가 (에러 상태 초기화)
@@ -1049,9 +1060,6 @@ function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }, 50)
 
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }, 50)
   }
 
   const renderLineBars = () => {
