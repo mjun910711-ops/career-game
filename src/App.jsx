@@ -1284,15 +1284,10 @@ function App() {
                     value={form.age}
                     onChange={(e) => {
                       const rawValue = e.target.value
-
-                      if (rawValue === '') {
-                        setForm({ ...form, age: '' })
-                        return
-                      }
-
-                      const numericValue = Number(rawValue)
-                      const safeAge = Math.max(20, Math.min(60, numericValue))
-
+                      setForm({ ...form, age: rawValue })
+                    }}
+                    onBlur={() => {
+                      const safeAge = Math.max(20, Math.min(60, Number(form.age) || 30))
                       setForm({ ...form, age: safeAge })
                     }}
                     placeholder="나이를 입력하세요"
