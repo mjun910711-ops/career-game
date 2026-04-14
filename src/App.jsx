@@ -1017,6 +1017,20 @@ function App() {
     }, 2200)
 
     if (turn >= maxTurns || result.next.health <= 15 || result.next.jobSecurity <= 15) {
+
+      // 👉 조기 종료 사유 설정
+      if (result.next.health <= 15) {
+        setLastEvent({
+          title: '시뮬레이션 조기 종료',
+          text: '건강이 임계 수준 이하로 떨어져 더 이상 커리어를 지속하기 어려운 상태입니다.',
+        })
+      } else if (result.next.jobSecurity <= 15) {
+        setLastEvent({
+          title: '시뮬레이션 조기 종료',
+          text: '직업 안정성이 크게 하락하여 커리어 지속이 어려운 상태입니다.',
+        })
+      }
+
       setPhase('result')
 
       setTimeout(() => {

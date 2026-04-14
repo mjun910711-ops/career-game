@@ -730,9 +730,18 @@ button {
     gap: 18px;
   }
 
-  .gender-select,
-  .option-select {
+  .gender-select {
     flex-direction: column;
+  }
+
+  .option-select {
+    grid-template-columns: 1fr;
+  }
+
+  .option-button:nth-child(4),
+  .option-button:nth-child(5) {
+    grid-column: auto;
+    justify-self: stretch;
   }
 
   .gender-option,
