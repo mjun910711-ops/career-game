@@ -452,6 +452,22 @@ function getStrengthLabel(state) {
   return strengths[0]?.label || '기본 체력'
 }
 
+function getCareerType(state) {
+  if (state.adaptability >= 70 && state.jobSecurity >= 65) {
+    return 'AI 적응형 생존자'
+  }
+  if (state.health >= 70 && state.resilience >= 65) {
+    return '장기 지속형 안정자'
+  }
+  if (state.stress >= 70) {
+    return '과부하 위험형'
+  }
+  if (state.jobSecurity <= 50) {
+    return '불안정 전환형'
+  }
+  return '균형 유지형'
+}
+
 function getRecommendedAction(state) {
   const candidates = [
     {
@@ -606,6 +622,31 @@ function getGuideSummaryTone(type) {
   if (type === 'priority') return 'warning'
   if (type === 'strength') return 'safe'
   return 'accent'
+}
+
+function getEffectLabelMap() {
+  return {
+    health: '건강',
+    adaptability: 'AI 적응력',
+    money: '경제적 자원',
+    stress: '스트레스',
+    resilience: '회복탄력성',
+  }
+}
+
+function formatActionFeedback(effect) {
+  const labelMap = getEffectLabelMap()
+
+  return Object.entries(effect)
+    .map(([key, value]) => ({
+      key,
+      label: labelMap[key] || key,
+      value,
+      isPositive:
+        key === 'stress'
+          ? value < 0
+          : value > 0,
+    }))
 }
 
 async function copyCurrentUrl() {
@@ -819,6 +860,7 @@ function App() {
   const [log, setLog] = useState([])
   const [lastEvent, setLastEvent] = useState(null)
   const [showGuide, setShowGuide] = useState(false)
+  const [actionFeedback, setActionFeedback] = useState(null)
 
   const maxTurns = 8
 
@@ -894,6 +936,13 @@ function App() {
   const playTurn = (actionKey) => {
     const result = simulateOneStep(state, actionKey, scenario, turn)
 
+    const feedbackItems = formatActionFeedback(result.action.effect)
+    setActionFeedback(feedbackItems)
+
+    setTimeout(() => {
+      setActionFeedback(null)
+    }, 1400)
+
     setState(result.next)
     setLastEvent(result.event)
     setLog((prev) => [
@@ -908,6 +957,23 @@ function App() {
     ])
 
     if (turn >= maxTurns || result.next.health <= 15 || result.next.jobSecurity <= 15) {
+      if (result.next.health <= 15 || result.next.jobSecurity <= 15) {
+        let reasonText = ''
+
+        if (result.next.health <= 15 && result.next.jobSecurity <= 15) {
+          reasonText = '건강과 직업 안정성이 모두 임계치 이하로 떨어져 시뮬레이션이 조기 종료되었습니다.'
+        } else if (result.next.health <= 15) {
+          reasonText = '건강이 임계치 이하로 떨어져 시뮬레이션이 조기 종료되었습니다.'
+        } else if (result.next.jobSecurity <= 15) {
+          reasonText = '직업 안정성이 임계치 이하로 떨어져 시뮬레이션이 조기 종료되었습니다.'
+        }
+
+        setLastEvent({
+          title: '시뮬레이션 조기 종료',
+          text: reasonText,
+        })
+      }
+
       setPhase('result')
     } else {
       setTurn((t) => t + 1)
@@ -1062,6 +1128,9 @@ function App() {
               <h2>플레이어 설정</h2>
               <p className="text-sub">
                 입력값을 기반으로 초기 건강, 직업 안정성, AI 적응력이 계산됩니다.
+              </p>
+              <p className="intro-hook">
+                AI 시대, 당신은 몇 살까지 일할 수 있을까요?
               </p>
 
               <div className="section-spacing" style={{ marginTop: '20px' }}>
@@ -1453,6 +1522,25 @@ function App() {
                     </div>
                   </div>
 
+                  {actionFeedback && (
+                    <div className="action-feedback-box">
+                      <div className="badge" style={{ marginBottom: '10px' }}>
+                        선택 효과
+                      </div>
+
+                      <div className="action-feedback-list">
+                        {actionFeedback.map((item) => (
+                          <span
+                            key={item.key}
+                            className={`action-feedback-chip ${item.isPositive ? 'positive' : 'negative'}`}
+                          >
+                            {item.label} {item.value > 0 ? `+${item.value}` : item.value}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div
                     className="glass-card play-guide"
                     style={{
@@ -1567,6 +1655,23 @@ function App() {
                     <p className="text-sub" style={{ marginTop: '10px' }}>
                       당신의 커리어 시뮬레이션 결과입니다.
                     </p>
+
+                    <div className="career-type-box">
+                      <span className="badge">커리어 유형</span>
+                      <h3>{getCareerType(state)}</h3>
+                    </div>
+
+                    {lastEvent?.title === '시뮬레이션 조기 종료' && (
+                      <div className="early-end-box">
+                        <div className="badge" style={{ marginBottom: '10px' }}>
+                          종료 사유
+                        </div>
+                        <p className="text-sub" style={{ color: '#ffe4e6', opacity: 1 }}>
+                          {lastEvent.text}
+                        </p>
+                      </div>
+                    )}
+
                     {riskBadges.length > 0 && (
                       <div className="result-risk-box">
                         <div className="badge" style={{ marginBottom: '10px' }}>

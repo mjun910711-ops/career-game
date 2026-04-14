@@ -1564,6 +1564,10 @@ button {
   .guide-card-category {
     font-size: 0.78rem;
   }
+
+  .intro-hook {
+    font-size: 0.95rem;
+  }
 }
 
 .input-field {
@@ -1581,4 +1585,134 @@ button {
 .field-group {
   display: grid;
   gap: 10px;
+}
+
+.intro-hook {
+  margin-top: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #f8fbff;
+  opacity: 0.96;
+}
+
+.action-feedback-box {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(56, 189, 248, 0.1),
+    rgba(99, 102, 241, 0.1)
+  );
+  border: 1px solid rgba(110, 231, 255, 0.22);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  animation: feedbackFadeIn 220ms ease;
+}
+
+.action-feedback-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.action-feedback-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.action-feedback-chip.positive {
+  color: #dcfce7;
+  background: rgba(34, 197, 94, 0.16);
+  border: 1px solid rgba(74, 222, 128, 0.24);
+}
+
+.action-feedback-chip.negative {
+  color: #ffe4e6;
+  background: rgba(244, 63, 94, 0.16);
+  border: 1px solid rgba(251, 113, 133, 0.24);
+}
+
+@keyframes feedbackFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .action-feedback-box {
+    padding: 14px 14px;
+    border-radius: 16px;
+  }
+
+  .action-feedback-list {
+    gap: 8px;
+  }
+
+  .action-feedback-chip {
+    font-size: 0.82rem;
+    padding: 9px 11px;
+  }
+}
+
+.career-type-box {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(56, 189, 248, 0.12),
+    rgba(99, 102, 241, 0.12)
+  );
+  border: 1px solid rgba(110, 231, 255, 0.25);
+  text-align: center;
+}
+
+.career-type-box h3 {
+  margin-top: 8px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .career-type-box {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .career-type-box h3 {
+    font-size: 1.15rem;
+  }
+}
+
+.early-end-box {
+  margin-top: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(244, 63, 94, 0.12),
+    rgba(190, 24, 93, 0.1)
+  );
+  border: 1px solid rgba(251, 113, 133, 0.24);
+}
+
+@media (max-width: 640px) {
+  .early-end-box {
+    padding: 16px;
+    border-radius: 16px;
+  }
 }
