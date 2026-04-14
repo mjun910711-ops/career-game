@@ -1032,6 +1032,23 @@ function App() {
     setShowGuide(false)
     setTurnFeedback(null)
 
+    // 👇 추가 (입력값 초기화)
+    setForm({
+      name: '',
+      age: 30,
+      gender: '',
+      job: '',
+    })
+
+    // 👇 추가 (에러 상태 초기화)
+    setNameError(false)
+    setGenderError(false)
+
+    // 👇 스크롤
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }, 50)
+
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }, 50)
