@@ -1565,3 +1565,20 @@ button {
     font-size: 0.78rem;
   }
 }
+
+.input-field {
+  display: grid;
+  gap: 10px;
+}
+
+.input-field-label {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: rgba(248, 251, 255, 0.9);
+  line-height: 1.4;
+}
+
+.field-group {
+  display: grid;
+  gap: 10px;
+}

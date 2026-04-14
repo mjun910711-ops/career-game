@@ -1065,23 +1065,29 @@ function App() {
               </p>
 
               <div className="section-spacing" style={{ marginTop: '20px' }}>
-                <input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="이름"
-                />
+                <label className="input-field">
+                  <span className="input-field-label">이름</span>
+                  <input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="이름을 입력하세요"
+                  />
+                </label>
 
-                <input
-                  type="number"
-                  min="20"
-                  max="60"
-                  value={form.age}
-                  onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
-                  placeholder="나이"
-                />
+                <label className="input-field">
+                  <span className="input-field-label">나이</span>
+                  <input
+                    type="number"
+                    min="20"
+                    max="60"
+                    value={form.age}
+                    onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
+                    placeholder="나이를 입력하세요"
+                  />
+                </label>
 
-                <div className="text-sub" style={{ display: 'grid', gap: '10px' }}>
-                  <span>성별 선택</span>
+                <div className="field-group">
+                  <span className="input-field-label">성별</span>
                   <div className="gender-select">
                     <button
                       type="button"
@@ -1107,8 +1113,8 @@ function App() {
                   </div>
                 </div>
 
-                <div className="text-sub" style={{ display: 'grid', gap: '10px' }}>
-                  <span>직군 선택</span>
+                <div className="field-group">
+                  <span className="input-field-label">직군</span>
                   <div className="option-select">
                     {Object.entries(JOBS).map(([key, job]) => (
                       <button
@@ -1123,8 +1129,8 @@ function App() {
                   </div>
                 </div>
 
-                <div className="text-sub" style={{ display: 'grid', gap: '10px' }}>
-                  <span>시나리오 선택</span>
+                <div className="field-group">
+                  <span className="input-field-label">시나리오</span>
                   <div className="option-select">
                     {Object.entries(SCENARIOS).map(([key, label]) => (
                       <button
