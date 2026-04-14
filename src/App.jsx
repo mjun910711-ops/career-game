@@ -187,7 +187,7 @@ function estimateWorkableAge(state) {
       18
   )
 
-  return clamp(now + bonus, now, 75)
+  return clamp(now + bonus, 20, 75)
 }
 
 function getJudgement(score) {
@@ -882,7 +882,14 @@ function App() {
 
   const maxTurns = 8
 
-  const introPreviewState = useMemo(() => buildInitialState(form), [form])
+  const introPreviewState = useMemo(() => {
+    const safeAge = Math.max(20, Math.min(60, Number(form.age) || 30))
+
+    return buildInitialState({
+      ...form,
+      age: safeAge,
+    })
+  }, [form])
   const introPreviewScore = useMemo(
     () => scoreCareer(introPreviewState),
     [introPreviewState]
@@ -901,7 +908,14 @@ function App() {
 
   const scenarioPreview = useMemo(() => {
     if (!state) return null
-    const initial = buildInitialState(form)
+
+    const safeAge = Math.max(20, Math.min(60, Number(form.age) || 30))
+
+    const initial = buildInitialState({
+      ...form,
+      age: safeAge,
+    })
+
     const filled = [...decisions]
     while (filled.length < maxTurns) filled.push('balance')
 
@@ -957,7 +971,12 @@ function App() {
       return
     }
 
-    const initial = buildInitialState(form)
+    const safeAge = Math.max(20, Math.min(60, Number(form.age) || 30))
+
+    const initial = buildInitialState({
+      ...form,
+      age: safeAge,
+    })
     setState(initial)
     setTurn(1)
     setShowGuide(false)
@@ -1263,7 +1282,19 @@ function App() {
                     min="20"
                     max="60"
                     value={form.age}
-                    onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
+                    onChange={(e) => {
+                      const rawValue = e.target.value
+
+                      if (rawValue === '') {
+                        setForm({ ...form, age: '' })
+                        return
+                      }
+
+                      const numericValue = Number(rawValue)
+                      const safeAge = Math.max(20, Math.min(60, numericValue))
+
+                      setForm({ ...form, age: safeAge })
+                    }}
                     placeholder="나이를 입력하세요"
                   />
                 </label>
