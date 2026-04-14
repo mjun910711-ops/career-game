@@ -1742,3 +1742,125 @@ button {
   border: 1px solid rgba(251, 113, 133, 0.52);
   box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.08);
 }
+
+/* =========================
+   선택 결과 피드백 Toast
+========================= */
+.turn-feedback-toast {
+  position: fixed;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+
+  min-width: 260px;
+  max-width: 92%;
+  padding: 16px 18px;
+
+  border-radius: 18px;
+  border: 1px solid rgba(110, 231, 255, 0.28);
+
+  background:
+    linear-gradient(180deg, rgba(16, 26, 48, 0.96), rgba(9, 14, 28, 0.96));
+
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.45),
+    0 0 28px rgba(110, 231, 255, 0.08);
+
+  text-align: center;
+
+  animation: toastFadeUp 0.32s ease;
+}
+
+/* =========================
+   Toast 텍스트
+========================= */
+.turn-feedback-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f8fbff;
+  letter-spacing: -0.01em;
+}
+
+.turn-feedback-sub {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: rgba(226, 232, 240, 0.72);
+}
+
+/* =========================
+   변화량 표시 영역
+========================= */
+.turn-delta {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* =========================
+   변화량 칩
+========================= */
+.delta-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: all 180ms ease;
+}
+
+/* 증가 */
+.delta-chip.plus {
+  background: rgba(52, 211, 153, 0.14);
+  color: #4ade80;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+}
+
+/* 감소 */
+.delta-chip.minus {
+  background: rgba(251, 113, 133, 0.14);
+  color: #fb7185;
+  border: 1px solid rgba(251, 113, 133, 0.28);
+}
+
+/* =========================
+   Toast 애니메이션
+========================= */
+@keyframes toastFadeUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* =========================
+   모바일 대응
+========================= */
+@media (max-width: 640px) {
+  .turn-feedback-toast {
+    bottom: 20px;
+    padding: 14px 16px;
+    border-radius: 16px;
+  }
+
+  .turn-feedback-title {
+    font-size: 0.9rem;
+  }
+
+  .turn-feedback-sub {
+    font-size: 0.78rem;
+  }
+
+  .delta-chip {
+    font-size: 0.74rem;
+    padding: 5px 9px;
+  }
+}

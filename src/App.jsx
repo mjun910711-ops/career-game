@@ -347,6 +347,17 @@ function applyScenarioDrift(state, scenario) {
   return next
 }
 
+function buildDelta(previous, next) {
+  return {
+    health: Math.round((next.health - previous.health) * 10) / 10,
+    jobSecurity: Math.round((next.jobSecurity - previous.jobSecurity) * 10) / 10,
+    adaptability: Math.round((next.adaptability - previous.adaptability) * 10) / 10,
+    resilience: Math.round((next.resilience - previous.resilience) * 10) / 10,
+    money: Math.round((next.money - previous.money) * 10) / 10,
+    stress: Math.round((next.stress - previous.stress) * 10) / 10,
+  }
+}
+
 function simulateOneStep(current, actionKey, scenario, year) {
   const action = ACTIONS.find((a) => a.key === actionKey)
   let next = { ...current }
@@ -861,6 +872,7 @@ function App() {
   const [lastEvent, setLastEvent] = useState(null)
   const [showGuide, setShowGuide] = useState(false)
   const [actionFeedback, setActionFeedback] = useState(null)
+  const [turnFeedback, setTurnFeedback] = useState(null)
 
   const nameInputRef = useRef(null)
   const [nameError, setNameError] = useState(false)
@@ -961,20 +973,21 @@ function App() {
       text: JOBS[form.job].description,
     })
     setPhase('play')
+
+    // ✅ STEP1 → STEP2 전환 시 스크롤
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }, 50)
   }
 
   const playTurn = (actionKey) => {
+    const previousState = { ...state }
     const result = simulateOneStep(state, actionKey, scenario, turn)
-
-    const feedbackItems = formatActionFeedback(result.action.effect)
-    setActionFeedback(feedbackItems)
-
-    setTimeout(() => {
-      setActionFeedback(null)
-    }, 1400)
+    const delta = buildDelta(previousState, result.next)
 
     setState(result.next)
     setLastEvent(result.event)
+
     setLog((prev) => [
       ...prev,
       {
@@ -983,28 +996,27 @@ function App() {
         action: result.action.title,
         actionKey,
         event: result.event.title,
+        delta,
       },
     ])
 
+    setTurnFeedback({
+      turn,
+      action: result.action.title,
+      event: result.event.title,
+      delta,
+    })
+
+    setTimeout(() => {
+      setTurnFeedback(null)
+    }, 2200)
+
     if (turn >= maxTurns || result.next.health <= 15 || result.next.jobSecurity <= 15) {
-      if (result.next.health <= 15 || result.next.jobSecurity <= 15) {
-        let reasonText = ''
-
-        if (result.next.health <= 15 && result.next.jobSecurity <= 15) {
-          reasonText = '건강과 직업 안정성이 모두 임계치 이하로 떨어져 시뮬레이션이 조기 종료되었습니다.'
-        } else if (result.next.health <= 15) {
-          reasonText = '건강이 임계치 이하로 떨어져 시뮬레이션이 조기 종료되었습니다.'
-        } else if (result.next.jobSecurity <= 15) {
-          reasonText = '직업 안정성이 임계치 이하로 떨어져 시뮬레이션이 조기 종료되었습니다.'
-        }
-
-        setLastEvent({
-          title: '시뮬레이션 조기 종료',
-          text: reasonText,
-        })
-      }
-
       setPhase('result')
+
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }, 50)
     } else {
       setTurn((t) => t + 1)
     }
@@ -1018,6 +1030,7 @@ function App() {
     setLastEvent(null)
     setScenario('baseline')
     setShowGuide(false)
+    setTurnFeedback(null)
   }
 
   const renderLineBars = () => {
@@ -1061,6 +1074,21 @@ function App() {
             <div className="text-sub" style={{ marginTop: '10px' }}>
               선택: {item.action} / 이벤트: {item.event}
             </div>
+
+            {item.delta && getDeltaItems(item.delta).length > 0 && (
+              <div className="turn-delta">
+                {getDeltaItems(item.delta).map((deltaItem) => (
+                  <span
+                    key={deltaItem.key}
+                    className={`delta-chip ${deltaItem.value > 0 ? 'plus' : 'minus'}`}
+                  >
+                    {deltaItem.label} {deltaItem.value > 0 ? '+' : ''}
+                    {deltaItem.value}
+                  </span>
+                ))}
+              </div>
+            )}
+
           </div>
         )
       })}
@@ -1673,30 +1701,49 @@ function App() {
                   <div>
                     <h3 style={{ marginBottom: '12px' }}>플레이 로그</h3>
                     <div className="section-spacing">
-                      {log.slice(1).reverse().map((item) => (
-                        <div
-                          key={item.turn}
-                          className="glass-card"
-                          style={{ padding: '16px', borderRadius: '16px' }}
-                        >
+                      {log.slice(1).reverse().map((item) => {
+                        const deltaItems = getDeltaItems(item.delta)
+
+                        return (
                           <div
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              gap: '12px',
-                              flexWrap: 'wrap',
-                            }}
+                            key={item.turn}
+                            className="glass-card"
+                            style={{ padding: '16px', borderRadius: '16px' }}
                           >
-                            <strong>
-                              {item.turn}년차 · {item.action}
-                            </strong>
-                            <span className="text-sub">{item.score}점</span>
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                gap: '12px',
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              <strong>
+                                {item.turn}년차 · {item.action}
+                              </strong>
+                              <span className="text-sub">{item.score}점</span>
+                            </div>
+
+                            <div className="text-sub" style={{ marginTop: '8px' }}>
+                              이벤트: {item.event}
+                            </div>
+
+                            {deltaItems.length > 0 && (
+                              <div className="turn-delta">
+                                {deltaItems.map((deltaItem) => (
+                                  <span
+                                    key={deltaItem.key}
+                                    className={`delta-chip ${deltaItem.value > 0 ? 'plus' : 'minus'}`}
+                                  >
+                                    {deltaItem.label} {deltaItem.value > 0 ? '+' : ''}
+                                    {deltaItem.value}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          <div className="text-sub" style={{ marginTop: '8px' }}>
-                            이벤트: {item.event}
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                       {log.length === 1 && (
                         <p className="text-sub">아직 로그가 없습니다.</p>
                       )}
@@ -1957,6 +2004,33 @@ function App() {
         )}
       </div>
 
+      {turnFeedback && (
+        <div className="turn-feedback-toast">
+          <div className="turn-feedback-title">
+            {turnFeedback.turn}년차 · {turnFeedback.action}
+          </div>
+
+          <div className="turn-feedback-sub">
+            이벤트: {turnFeedback.event}
+          </div>
+
+          <div
+            className="turn-delta"
+            style={{ marginTop: '10px', justifyContent: 'center' }}
+          >
+            {getDeltaItems(turnFeedback.delta).map((deltaItem) => (
+              <span
+                key={deltaItem.key}
+                className={`delta-chip ${deltaItem.value > 0 ? 'plus' : 'minus'}`}
+              >
+                {deltaItem.label} {deltaItem.value > 0 ? '+' : ''}
+                {deltaItem.value}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <GuideModal
         open={showGuide}
         onClose={() => setShowGuide(false)}
@@ -1968,6 +2042,27 @@ function App() {
       />
     </div>
   )
+}
+
+function getDeltaItems(delta) {
+  if (!delta) return []
+
+  const labelMap = {
+    health: '건강',
+    jobSecurity: '직업 안정성',
+    adaptability: 'AI 적응력',
+    resilience: '회복탄력성',
+    money: '경제적 자원',
+    stress: '스트레스',
+  }
+
+  return Object.entries(delta)
+    .filter(([, value]) => value !== 0)
+    .map(([key, value]) => ({
+      key,
+      label: labelMap[key] || key,
+      value,
+    }))
 }
 
 export default App
