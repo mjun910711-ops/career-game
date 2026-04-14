@@ -1716,3 +1716,29 @@ button {
     border-radius: 16px;
   }
 }
+
+.required-label em {
+  font-style: normal;
+  color: #fb7185;
+  margin-left: 2px;
+}
+
+.input-error {
+  border-color: rgba(251, 113, 133, 0.72) !important;
+  box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.12);
+}
+
+.field-error-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fda4af;
+  line-height: 1.4;
+  margin-top: -2px;
+}
+
+.field-group-error {
+  padding: 6px;
+  border-radius: 18px;
+  border: 1px solid rgba(251, 113, 133, 0.52);
+  box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.08);
+}

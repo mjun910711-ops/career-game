@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import './App.css'
 
 const JOBS = {
@@ -862,6 +862,12 @@ function App() {
   const [showGuide, setShowGuide] = useState(false)
   const [actionFeedback, setActionFeedback] = useState(null)
 
+  const nameInputRef = useRef(null)
+  const [nameError, setNameError] = useState(false)
+
+  const genderSectionRef = useRef(null)
+  const [genderError, setGenderError] = useState(false)
+
   const maxTurns = 8
 
   const introPreviewState = useMemo(() => buildInitialState(form), [form])
@@ -909,8 +915,30 @@ function App() {
   const riskBadges = useMemo(() => getRiskBadges(state), [state])
 
   const startGame = () => {
+    if (!form.name.trim()) {
+      setNameError(true)
+
+      requestAnimationFrame(() => {
+        nameInputRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+        nameInputRef.current?.focus()
+      })
+
+      return
+    }
+
     if (form.gender === 'none') {
-      alert('성별을 선택해주세요.')
+      setGenderError(true)
+
+      requestAnimationFrame(() => {
+        genderSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+      })
+
       return
     }
 
@@ -918,6 +946,8 @@ function App() {
     setState(initial)
     setTurn(1)
     setShowGuide(false)
+    setNameError(false)
+    setGenderError(false)
     setLog([
       {
         turn: 0,
@@ -1135,12 +1165,24 @@ function App() {
 
               <div className="section-spacing" style={{ marginTop: '20px' }}>
                 <label className="input-field">
-                  <span className="input-field-label">이름</span>
+                  <span className="input-field-label required-label">
+                    이름 <em>*</em>
+                  </span>
                   <input
+                    ref={nameInputRef}
                     value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    onChange={(e) => {
+                      setForm({ ...form, name: e.target.value })
+                      if (e.target.value.trim()) {
+                        setNameError(false)
+                      }
+                    }}
                     placeholder="이름을 입력하세요"
+                    className={nameError ? 'input-error' : ''}
                   />
+                  {nameError && (
+                    <span className="field-error-text">이름은 필수 입력 항목입니다.</span>
+                  )}
                 </label>
 
                 <label className="input-field">
@@ -1155,31 +1197,46 @@ function App() {
                   />
                 </label>
 
-                <div className="field-group">
-                  <span className="input-field-label">성별</span>
-                  <div className="gender-select">
+                <div className="field-group" ref={genderSectionRef}>
+                  <span className="input-field-label required-label">
+                    성별 <em>*</em>
+                  </span>
+
+                  <div className={`gender-select ${genderError ? 'field-group-error' : ''}`}>
                     <button
                       type="button"
                       className={`gender-option ${form.gender === 'none' ? 'active' : ''}`}
-                      onClick={() => setForm({ ...form, gender: 'none' })}
+                      onClick={() => {
+                        setForm({ ...form, gender: 'none' })
+                      }}
                     >
                       미선택
                     </button>
                     <button
                       type="button"
                       className={`gender-option ${form.gender === 'male' ? 'active' : ''}`}
-                      onClick={() => setForm({ ...form, gender: 'male' })}
+                      onClick={() => {
+                        setForm({ ...form, gender: 'male' })
+                        setGenderError(false)
+                      }}
                     >
                       남성
                     </button>
                     <button
                       type="button"
                       className={`gender-option ${form.gender === 'female' ? 'active' : ''}`}
-                      onClick={() => setForm({ ...form, gender: 'female' })}
+                      onClick={() => {
+                        setForm({ ...form, gender: 'female' })
+                        setGenderError(false)
+                      }}
                     >
                       여성
                     </button>
                   </div>
+
+                  {genderError && (
+                    <span className="field-error-text">성별은 필수 선택 항목입니다.</span>
+                  )}
                 </div>
 
                 <div className="field-group">
