@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 
 const JOBS = {
@@ -660,21 +660,6 @@ function formatActionFeedback(effect) {
     }))
 }
 
-async function copyCurrentUrl() {
-  try {
-    await navigator.clipboard.writeText(window.location.href)
-    alert('링크가 복사되었습니다!')
-  } catch (error) {
-    const temp = document.createElement('textarea')
-    temp.value = window.location.href
-    document.body.appendChild(temp)
-    temp.select()
-    document.execCommand('copy')
-    document.body.removeChild(temp)
-    alert('링크가 복사되었습니다!')
-  }
-}
-
 function ProgressBar({ label, value, danger = false }) {
   const tone = getProgressTone(value, danger)
   const displayValue = Number.isInteger(value) ? value : value.toFixed(1)
@@ -840,7 +825,7 @@ function GuideModal({
 
         <div className="guide-modal-actions">
           <button className="result-action-btn" onClick={onShare}>
-            📤 친구에게 공유하기
+            📤 내 결과 친구에게 공유하기
           </button>
           <button className="btn-primary" onClick={onRestart}>
             다시 플레이
@@ -939,6 +924,111 @@ function App() {
   }, [state, phase, currentScore, workableAge, jobExpectedAge])
   
   const riskBadges = useMemo(() => getRiskBadges(state), [state])
+
+    const shareResult = async () => {
+      if (!state || phase !== 'result') return
+
+      const params = new URLSearchParams({
+        shared: '1',
+        name: state.name,
+        age: String(state.age),
+        gender: state.gender,
+        job: state.jobKey,
+        workHours: String(state.workHours),
+        health: String(Math.round(state.health)),
+        adaptability: String(Math.round(state.adaptability)),
+        stress: String(Math.round(state.stress)),
+        jobSecurity: String(Math.round(state.jobSecurity)),
+        resilience: String(Math.round(state.resilience)),
+        money: String(Math.round(state.money)),
+        scenario,
+        workableAge: String(workableAge),
+        score: String(currentScore),
+        turn: String(turn),
+        eventTitle: lastEvent?.title || '',
+        eventText: lastEvent?.text || '',
+      })
+
+      const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`
+
+      try {
+        await navigator.clipboard.writeText(shareUrl)
+        alert('결과 링크가 복사되었습니다! 친구에게 공유해보세요 🚀')
+      } catch (error) {
+        const temp = document.createElement('textarea')
+        temp.value = shareUrl
+        document.body.appendChild(temp)
+        temp.select()
+        document.execCommand('copy')
+        document.body.removeChild(temp)
+        alert('결과 링크가 복사되었습니다! 친구에게 공유해보세요 🚀')
+      }
+    }
+
+      useEffect(() => {
+        const params = new URLSearchParams(window.location.search)
+
+        if (params.get('shared') !== '1') return
+
+        const jobKey = params.get('job')
+        if (!jobKey || !JOBS[jobKey]) return
+
+        const restoredState = {
+          name: params.get('name') || '플레이어',
+          age: Number(params.get('age')) || 30,
+          gender: params.get('gender') || 'none',
+          jobKey,
+          jobLabel: JOBS[jobKey].label,
+          aiRisk: JOBS[jobKey].aiRisk,
+          bodyLoad: JOBS[jobKey].bodyLoad,
+          expectedWorkableAge: JOBS[jobKey].expectedWorkableAge,
+          workHours: Number(params.get('workHours')) || 45,
+          health: Number(params.get('health')) || 50,
+          adaptability: Number(params.get('adaptability')) || 50,
+          stress: Number(params.get('stress')) || 50,
+          jobSecurity: Number(params.get('jobSecurity')) || 50,
+          resilience: Number(params.get('resilience')) || 50,
+          money: Number(params.get('money')) || 50,
+        }
+
+        setForm({
+          name: restoredState.name,
+          age: clamp(restoredState.age, 20, 60),
+          gender: restoredState.gender,
+          job: restoredState.jobKey,
+          workHours: clamp(restoredState.workHours, 20, 70),
+          health: 3,
+          exercise: 3,
+          aiSkill: 3,
+          learningWill: 3,
+        })
+
+        setScenario(params.get('scenario') || 'baseline')
+        setState(restoredState)
+        setTurn(Number(params.get('turn')) || 8)
+        setLastEvent({
+          title: params.get('eventTitle') || '공유된 결과',
+          text: params.get('eventText') || '친구가 공유한 시뮬레이션 결과입니다.',
+        })
+        setLog([
+          {
+            turn: 0,
+            score: Number(params.get('score')) || scoreCareer(restoredState),
+            action: '공유 결과',
+            event: '공유 링크로 진입',
+          },
+        ])
+        setShowGuide(false)
+        setActionFeedback(null)
+        setTurnFeedback(null)
+        setNameError(false)
+        setGenderError(false)
+        setPhase('result')
+
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        }, 50)
+      }, [])
 
   const startGame = () => {
     if (!form.name.trim()) {
@@ -2058,8 +2148,8 @@ function App() {
                       근로가능연령 늘리기 전략
                     </button>
 
-                    <button className="result-action-btn" onClick={copyCurrentUrl}>
-                      📤 친구에게 공유하기
+                    <button className="result-action-btn" onClick={shareResult}>
+                      📤 내 결과 친구에게 공유하기
                     </button>
                   </div>
 
@@ -2106,7 +2196,7 @@ function App() {
         guideData={guideData}
         workableAge={workableAge}
         jobExpectedAge={jobExpectedAge}
-        onShare={copyCurrentUrl}
+        onShare={shareResult}
         onRestart={restart}
       />
     </div>
